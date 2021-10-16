@@ -1,0 +1,112 @@
+---
+title: "Machine Learning for Factor Investing (Coqueret & Guida, 2021)"
+output:
+  pdf_document: 
+    fig_width: 6
+    fig_height: 3.8
+  html_notebook: default
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE)
+``` 
+
+# Chapter 1
+
+```{r message=FALSE}
+# load required libraries
+library(tidyverse)
+library(lubridate)
+load('data_ml.RData')
+```
+
+```{r}
+data_ml <- data_ml %>% 
+    filter(date > "1999-12-31",
+           date < "2019-01-01") %>% 
+    arrange(stock_id, date)
+data_ml[1:6, 1:6]
+```
+
+Plot number of assets by date
+```{r}
+data_ml %>% 
+    group_by(date) %>% 
+    summarize(nb_assets = stock_id %>% as.factor() %>% nlevels()) %>% # count number of assets
+                  ggplot(aes(x = date, y = nb_assets)) + geom_col() + 
+                  coord_fixed(3)
+```
+```{r}
+features <- colnames(data_ml[3:95])
+features_short <- c("Div_Yld", "Eps", "Mkt_Cap_12M_Usd", "Mom_11M_Usd", "Ocf", "Pb", "Vol1Y_Usd")
+```
+
+Create additional categorical labels. 
+```{r}
+data_ml <- data_ml %>% 
+            group_by(date) %>% 
+            mutate(R1M_Usd_C = R1M_Usd > median(R1M_Usd),
+                   R12M_Usd_C = R1M_Usd > median(R12M_Usd)) %>% 
+            ungroup() %>% 
+            mutate_if(is.logical, as.factor)
+```
+
+Splitting train and test set.
+```{r}
+separation_date <- as.Date("2014-01-15")
+training <- filter(data_ml, date > separation_date)
+testing_sample <- filter(data_ml, date <= separation_date)
+```
+
+Keep stocks with maximum number of points. 
+```{r}
+stock_ids <- levels(as.factor(data_ml$stock_id)) # a list of all stock_ids
+stock_days <- data_ml %>% # compute the number of data points per stock
+    group_by(stock_id) %>% summarize(nb = n())
+stock_ids_short <- stock_ids[which(stock_days$nb == max(stock_days$nb))] # Stocks with full data 
+returns <- data_ml %>% 
+    filter(stock_id %in% stock_ids_short) %>% # 1. Filter the data
+    dplyr::select(date, stock_id, R1M_Usd) %>% # 2. Keep returns along with dates and firms ID
+    spread(key = stock_id, value = R1M_Usd) # 3. Put in matrix shape
+
+```
+
+
+
+# Chapter 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
